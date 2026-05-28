@@ -205,6 +205,15 @@ bool Configuration::CheckActifeWifiCfgFlag() {
 */
 void Configuration::CheckResetCfg() {
   Log->AddEvent(LogLevel_Verbose, F("Check reset MCU cfg"));
+
+  /* Timer Camera X and boards without a reset button set CFG_RESET_PIN to -1.
+     digitalRead(-1) always returns LOW, which would lock the device in the
+     factory-reset wait loop forever. Skip the check entirely. */
+  if (CFG_RESET_PIN < 0) {
+    Log->AddEvent(LogLevel_Info, F("No reset pin configured, skipping cfg reset check"));
+    return;
+  }
+
   bool ResetPinStatus = digitalRead(CFG_RESET_PIN);
 
   /* wait 10s to pressed reset pin */

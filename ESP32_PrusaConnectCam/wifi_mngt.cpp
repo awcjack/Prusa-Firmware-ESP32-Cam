@@ -280,6 +280,24 @@ void WiFiMngt::SyncNtpTime() {
     if (true == log->GetNtpTimeSynced()) {
       log->AddEvent(LogLevel_Info, F("Sync NTP time done. Set UTC timezone"));
       NtpFirstSync = true;
+
+#ifdef M5_TIMER_CAM_X
+      /* Write verified NTP time to BM8563 so deep-sleep wakeups have an accurate clock. */
+      struct tm timeinfo;
+      if (getLocalTime(&timeinfo)) {
+        RtcTime rtcTime;
+        rtcTime.seconds = (uint8_t)timeinfo.tm_sec;
+        rtcTime.minutes = (uint8_t)timeinfo.tm_min;
+        rtcTime.hours   = (uint8_t)timeinfo.tm_hour;
+        rtcTime.day     = (uint8_t)timeinfo.tm_mday;
+        rtcTime.month   = (uint8_t)(timeinfo.tm_mon + 1);
+        rtcTime.year    = (uint16_t)(timeinfo.tm_year + 1900);
+        if (SystemRtc.SetTime(rtcTime)) {
+          log->AddEvent(LogLevel_Info, F("BM8563 RTC updated from NTP"));
+        }
+      }
+#endif
+
     } else {
       log->AddEvent(LogLevel_Info, F("Sync NTP time fail"));
     }
