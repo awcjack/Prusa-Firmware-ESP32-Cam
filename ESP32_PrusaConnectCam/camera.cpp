@@ -107,20 +107,24 @@ void Camera::InitCameraModule() {
   CameraConfig.pin_sccb_scl = SIOC_GPIO_NUM;
   CameraConfig.pin_pwdn = PWDN_GPIO_NUM;
   CameraConfig.pin_reset = RESET_GPIO_NUM;
-  CameraConfig.xclk_freq_hz = 15000000;       // or 3000000; 16500000; 20000000
+#ifdef CAMERA_XCLK_FREQ_HZ
+  CameraConfig.xclk_freq_hz = CAMERA_XCLK_FREQ_HZ;  /* board-specific: OV3660 needs 20 MHz */
+#else
+  CameraConfig.xclk_freq_hz = 15000000;
+#endif
   CameraConfig.pixel_format = PIXFORMAT_JPEG; /* YUV422,GRAYSCALE,RGB565,JPEG */
 
-  /* OV2640
+  /* Supported resolutions (OV2640 and OV3660):
     FRAMESIZE_QVGA (320 x 240)
-    FRAMESIZE_CIF (352 x 288)
-    FRAMESIZE_VGA (640 x 480)
+    FRAMESIZE_CIF  (352 x 288)
+    FRAMESIZE_VGA  (640 x 480)
     FRAMESIZE_SVGA (800 x 600)
-    FRAMESIZE_XGA (1024 x 768)
+    FRAMESIZE_XGA  (1024 x 768)
     FRAMESIZE_SXGA (1280 x 1024)
-    FRAMESIZE_UXGA (1600 x 1200)
+    FRAMESIZE_UXGA (1600 x 1200)  -- OV3660 supports up to 2048x1536 but esp_camera caps at UXGA
 
-    CAMERA_GRAB_WHEN_EMPTY - Fills buffers when they are empty. Less resources but first 'fb_count' frames might be old
-    CAMERA_GRAB_LATEST     - Except when 1 frame buffer is used, queue will always contain the last 'fb_count' frames
+    CAMERA_GRAB_WHEN_EMPTY - fills buffers when empty; first fb_count frames may be stale
+    CAMERA_GRAB_LATEST     - queue always holds the most recent fb_count frames
   */
 
   CameraConfig.frame_size = TFrameSize;             /* FRAMESIZE_ + QVGA|CIF|VGA|SVGA|XGA|SXGA|UXGA */
@@ -424,16 +428,20 @@ void Camera::CapturePhoto() {
       }
 
       char buf[150] = { '\0' };
-      uint8_t ControlFlag = (uint8_t)FrameBuffer->buf[15];
       sprintf(buf, "The picture has been saved. Size: %d bytes, Photo resolution: %zu x %zu", FrameBuffer->len, FrameBuffer->width, FrameBuffer->height);
       log->AddEvent(LogLevel_Info, buf);
 
-      if (ControlFlag != 0x00) {
-        log->AddEvent(LogLevel_Error, "Camera capture failed! flag: " + String(ControlFlag, HEX));
+      /* Validate JPEG by checking SOI marker (FF D8) at the start of the buffer.
+         The previous OV2640-specific byte[15] check does not apply to OV3660. */
+      bool jpegValid = (FrameBuffer->len > 2) &&
+                       (FrameBuffer->buf[0] == 0xFF) &&
+                       (FrameBuffer->buf[1] == 0xD8);
+      if (!jpegValid) {
+        log->AddEvent(LogLevel_Error, F("Camera capture failed! Invalid JPEG SOI marker"));
         FrameBuffer->len = 0;
 
       } else {
-        log->AddEvent(LogLevel_Info, F("Photo OK! "), String(ControlFlag, HEX));
+        log->AddEvent(LogLevel_Info, F("Photo OK!"));
         CameraCaptureFailedCounter = 0;
 
         /* generate exif header */
