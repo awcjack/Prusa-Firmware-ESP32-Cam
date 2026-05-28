@@ -224,6 +224,11 @@ const char page_config_html[] PROGMEM = R"rawliteral(
         <tr><td class="pc1">Fingerprint</td><td class=pc2 id="fingerprint"></td></tr>
 		<tr><td class="pc1">Trigger Interval [s]</td><td ><input type="text" name="refresh" id=refreshid >&nbsp;<button class="btn_save" onclick="changeValue(document.getElementById('refreshid').value, 'set_int?refresh=', 'config')">Save</button></td></tr>
 		<tr><td style="height: 1px;"></td><td style="height: 1px;"></td></tr>
+		<tr><td class="ps3">Prusa Link</td><td></td></tr>
+		<tr><td class="pc1">Printer IP</td><td><input type="text" name="prusalink_ip" id="prusalink_ipid" placeholder="192.168.1.x">&nbsp;<button class="btn_save" onclick="savePrusaLink()">Save</button></td></tr>
+		<tr><td class="pc1">API Key</td><td><input type="password" name="prusalink_apikey" id="prusalink_apikeyid" placeholder="(leave blank to keep current)"></td></tr>
+		<tr><td class="pc1">Printer status</td><td class="pc2"><span id="prusalink_status_txt">-</span>&nbsp;<button class="btn_save" onclick="checkPrusaLink()">Check</button></td></tr>
+		<tr><td style="height: 1px;"></td><td style="height: 1px;"></td></tr>
 		<tr><td class="pc1">Image quality</td><td class="pc2">Low <input type="range" class="slider" name="photo_quality" id=photo_qualityid min="10" max="63" step="1" onchange="changeValue(this.value, 'set_int?photo_quality=', 'config')"> High</td></tr>
 		<tr>
 			<td class="pc1">Resolution</td><td><label for="framesize"></label>
@@ -929,6 +934,12 @@ function get_data(val) {
 				$("#refreshInterval").text(obj.refreshInterval);
 				document.getElementById('tokenid').value = obj.token;
 				document.getElementById('refreshid').value = obj.refreshInterval;
+				if (document.getElementById('prusalink_ipid')) {
+					document.getElementById('prusalink_ipid').value = obj.prusalink_ip;
+					if (obj.prusalink_configured) {
+						document.getElementById('prusalink_apikeyid').placeholder = '(key saved — leave blank to keep)';
+					}
+				}
 				document.getElementById('photo_qualityid').value = obj.photoquality;
 				document.getElementById('framesizeid').value = obj.framesize;
 				document.getElementById('brightnessid').value = obj.brightness;
@@ -1405,6 +1416,26 @@ function setupCollapsibleButtonsWiFi() {
         } else {
             content_wifi.css("display", "block");
         }
+    });
+}
+function savePrusaLink() {
+    var ip  = document.getElementById('prusalink_ipid').value;
+    var key = document.getElementById('prusalink_apikeyid').value;
+    var url = 'set_prusalink?ip=' + encodeURIComponent(ip) + '&apikey=' + encodeURIComponent(key);
+    $.get(url, function() {
+        document.getElementById('prusalink_status_txt').innerText = 'Saved';
+        if (key.length > 0) {
+            document.getElementById('prusalink_apikeyid').value = '';
+            document.getElementById('prusalink_apikeyid').placeholder = '(key saved — leave blank to keep)';
+        }
+    });
+}
+function checkPrusaLink() {
+    document.getElementById('prusalink_status_txt').innerText = 'Checking...';
+    $.getJSON('prusalink_status', function(obj) {
+        document.getElementById('prusalink_status_txt').innerText = obj.state + (obj.configured ? '' : ' (not configured)');
+    }).fail(function() {
+        document.getElementById('prusalink_status_txt').innerText = 'Error';
     });
 }
 )rawliteral";
