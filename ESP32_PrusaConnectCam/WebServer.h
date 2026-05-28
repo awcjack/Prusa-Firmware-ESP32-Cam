@@ -33,6 +33,10 @@
 #include "WebStream.h"
 #include "ExternalTemperatureSensor.h"
 
+#ifdef M5_TIMER_CAM_X
+#include "battery.h"
+#endif
+
 extern AsyncWebServer server;  ///< global variable for web server
 
 void Server_LoadCfg();

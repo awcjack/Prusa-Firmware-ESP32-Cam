@@ -530,6 +530,21 @@ void Server_InitWebServer_Actions() {
 
     request->send(200, F("text/plain"), "Starting remove files from SD card");
   });
+
+#ifdef M5_TIMER_CAM_X
+  /* GET /battery — returns JSON with battery voltage and charge percentage */
+  server.on("/battery", HTTP_GET, [](AsyncWebServerRequest* request) {
+    SystemLog.AddEvent(LogLevel_Verbose, F("WEB server: /battery"));
+    if (Server_CheckBasicAuth(request) == false)
+      return;
+
+    SystemBattery.Update();
+    String json = "{\"voltage_mv\":" + String(SystemBattery.GetVoltageMv()) +
+                  ",\"percent\":"    + String(SystemBattery.GetPercent())   +
+                  ",\"low\":"        + String(SystemBattery.IsLow() ? "true" : "false") + "}";
+    request->send(200, F("application/json"), json);
+  });
+#endif
 }
 
 /**
@@ -1246,6 +1261,13 @@ String Server_GetJsonData() {
   doc_json["ext_temp"] = ExternalTemperatureSensor.GetTemperatureString();
   doc_json["ext_hum"] = ExternalTemperatureSensor.GetHumidityString();
   doc_json["exttemp_unit"] = ExternalTemperatureSensor.GetTemperatureUnit();
+
+#ifdef M5_TIMER_CAM_X
+  SystemBattery.Update();
+  doc_json["bat_mv"]      = SystemBattery.GetVoltageMv();
+  doc_json["bat_percent"] = SystemBattery.GetPercent();
+  doc_json["bat_low"]     = SystemBattery.IsLow();
+#endif
 
   serializeJson(doc_json, string_json);
   SystemLog.AddEvent(LogLevel_Verbose, string_json);
