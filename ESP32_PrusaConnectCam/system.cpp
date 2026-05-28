@@ -516,52 +516,65 @@ void System_TaskCaptureAndSendPhoto(void *pvParameters) {
 
       /* check Prusa Link printer state — skip capture if printer is offline */
       PrinterState printerState = SystemPrusaLink.QueryPrinterState();
-      if (printerState == PrinterState::OFFLINE || printerState == PrinterState::ERROR) {
+      bool printerReady = (printerState != PrinterState::OFFLINE) && (printerState != PrinterState::ERROR);
+
+      if (!printerReady) {
         SystemLog.AddEvent(LogLevel_Info,
           "Skipping capture: printer " + SystemPrusaLink.StateToString(printerState));
       }
 
-      /* send photo to backend*/
-      if ((WL_CONNECTED == WiFi.status()) && (false == FirmwareUpdate.Processing)
-          && (printerState != PrinterState::OFFLINE) && (printerState != PrinterState::ERROR)) {
+      /* send photo to backend — skipped when printer is offline or in error */
+      if ((WL_CONNECTED == WiFi.status()) && (false == FirmwareUpdate.Processing) && printerReady) {
         SystemLog.AddEvent(LogLevel_Verbose, F("Task photo processing. Start sending photo"));
         esp_task_wdt_reset();
         Connect.TakePictureAndSendToBackend();
+      }
 
 #ifdef M5_TIMER_CAM_X
-        /* After a successful upload, enter deep sleep for the configured refresh
-           interval. The ESP32 timer wakeup re-runs setup() on the next cycle.
-           Skip sleep when streaming is active or a firmware update is running. */
-        if ((false == FirmwareUpdate.Processing) && (false == SystemCamera.GetStreamStatus())) {
-          uint32_t msSinceWeb = millis() - WebClientLastActivity;
-          bool webActive      = (WebClientLastActivity > 0) && (msSinceWeb < WEB_ACTIVITY_SLEEP_HOLDOFF);
+      /* Deep sleep runs after every capture cycle (whether or not a photo was sent)
+         so the device sleeps even when the printer is offline or in error. */
+      if ((false == FirmwareUpdate.Processing) && (false == SystemCamera.GetStreamStatus())) {
+        uint32_t msSinceWeb = millis() - WebClientLastActivity;
+        bool webActive      = (WebClientLastActivity > 0) && (msSinceWeb < WEB_ACTIVITY_SLEEP_HOLDOFF);
 
-          if (webActive) {
-            /* Browser is open — stay awake and ensure the next wakeup also
-               gets a reconnect window via StayAwakeAfterSleep. */
-            StayAwakeAfterSleep = true;
-            SystemLog.AddEvent(LogLevel_Info,
-              "Deep sleep skipped: web client active " + String(msSinceWeb / 1000) + "s ago");
-          } else {
-            /* No recent web activity — sleep. Clear flag so subsequent wakeups
-               run as quick capture cycles until the user opens the UI again. */
-            StayAwakeAfterSleep = false;
-            uint32_t sleepSec = (uint32_t)SystemConfig.LoadRefreshInterval();
-            SystemBattery.Update();
-            SystemLog.AddEvent(LogLevel_Info,
-              "Battery: " + String(SystemBattery.GetVoltageMv()) + " mV (" +
-              String(SystemBattery.GetPercent()) + "%)");
-            SystemLog.AddEvent(LogLevel_Info,
-              "Entering deep sleep for " + String(sleepSec) + " s");
-            esp_task_wdt_reset();
-            delay(50);  /* flush serial */
-            esp_sleep_enable_timer_wakeup((uint64_t)sleepSec * 1000000ULL);
-            esp_deep_sleep_start();
-            /* execution never reaches here */
+        if (webActive) {
+          StayAwakeAfterSleep = true;
+          SystemLog.AddEvent(LogLevel_Info,
+            "Deep sleep skipped: web client active " + String(msSinceWeb / 1000) + "s ago");
+        } else {
+          StayAwakeAfterSleep = false;
+          uint32_t baseSec = (uint32_t)SystemConfig.LoadRefreshInterval();
+
+          /* Scale sleep duration by printer state to save battery when
+             the printer is not actively printing. */
+          uint32_t sleepSec;
+          switch (printerState) {
+            case PrinterState::OFFLINE:
+            case PrinterState::ERROR:
+              sleepSec = REFRESH_INTERVAL_MAX;          /* max interval — printer off */
+              break;
+            case PrinterState::OPERATIONAL:
+              sleepSec = min(baseSec * 3u, (uint32_t)REFRESH_INTERVAL_MAX);  /* idle — 3× */
+              break;
+            default:
+              sleepSec = baseSec;
+              break;
           }
+
+          SystemBattery.Update();
+          SystemLog.AddEvent(LogLevel_Info,
+            "Battery: " + String(SystemBattery.GetVoltageMv()) + " mV (" +
+            String(SystemBattery.GetPercent()) + "%)");
+          SystemLog.AddEvent(LogLevel_Info,
+            "Printer: " + SystemPrusaLink.StateToString(printerState) +
+            " — sleeping " + String(sleepSec) + " s");
+          esp_task_wdt_reset();
+          delay(50);
+          esp_sleep_enable_timer_wakeup((uint64_t)sleepSec * 1000000ULL);
+          esp_deep_sleep_start();
         }
-#endif
       }
+#endif
 
     } else {
       /* update counter */
