@@ -525,33 +525,18 @@ void System_TaskCaptureAndSendPhoto(void *pvParameters) {
            interval. The ESP32 timer wakeup re-runs setup() on the next cycle.
            Skip sleep when streaming is active or a firmware update is running. */
         if ((false == FirmwareUpdate.Processing) && (false == SystemCamera.GetStreamStatus())) {
-          bool fromDeepSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER);
-          uint32_t msSinceWeb  = millis() - WebClientLastActivity;
-          bool webActive       = (WebClientLastActivity > 0) && (msSinceWeb < WEB_ACTIVITY_SLEEP_HOLDOFF);
+          uint32_t msSinceWeb = millis() - WebClientLastActivity;
+          bool webActive      = (WebClientLastActivity > 0) && (msSinceWeb < WEB_ACTIVITY_SLEEP_HOLDOFF);
 
-          /* Give an AP-length connection window on:
-             - cold boot (always), or
-             - deep-sleep wakeup when StayAwakeAfterSleep is set (user was
-               recently active; flag survives deep sleep in RTC memory). */
-          bool inApWindow = (!fromDeepSleep || StayAwakeAfterSleep) && (millis() < STA_AP_MODE_TIMEOUT);
-
-          if (inApWindow) {
-            SystemLog.AddEvent(LogLevel_Info,
-              "Deep sleep skipped: AP window (" + String(millis() / 1000) + "s / " +
-              String(STA_AP_MODE_TIMEOUT / 1000) + "s)");
-            /* AP window expired with no web activity — clear flag so next wakeup
-               returns to the quick capture cycle. */
-            if ((millis() >= STA_AP_MODE_TIMEOUT) && !webActive) {
-              StayAwakeAfterSleep = false;
-            }
-          } else if (webActive) {
+          if (webActive) {
+            /* Browser is open — stay awake and ensure the next wakeup also
+               gets a reconnect window via StayAwakeAfterSleep. */
+            StayAwakeAfterSleep = true;
             SystemLog.AddEvent(LogLevel_Info,
               "Deep sleep skipped: web client active " + String(msSinceWeb / 1000) + "s ago");
-            /* Refresh flag so the next wakeup still grants a window. */
-            StayAwakeAfterSleep = true;
           } else {
-            /* No active client and outside AP window — sleep and clear flag so
-               subsequent wakeups run as quick capture cycles. */
+            /* No recent web activity — sleep. Clear flag so subsequent wakeups
+               run as quick capture cycles until the user opens the UI again. */
             StayAwakeAfterSleep = false;
             uint32_t sleepSec = (uint32_t)SystemConfig.LoadRefreshInterval();
             SystemBattery.Update();

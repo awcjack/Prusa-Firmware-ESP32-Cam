@@ -129,6 +129,14 @@ void setup() {
       SystemLog.AddEvent(LogLevel_Info, F("System clock primed from RTC"));
     }
   }
+
+  /* Seed the web-activity holdoff so the user has WEB_ACTIVITY_SLEEP_HOLDOFF ms
+     to open the web UI after any boot:
+     - cold boot: always (RTC_DATA_ATTR is cleared on power-cycle, flag = false)
+     - deep sleep wakeup: only when StayAwakeAfterSleep is set (user was recently active) */
+  if ((wakeupCause != ESP_SLEEP_WAKEUP_TIMER) || StayAwakeAfterSleep) {
+    WebClientLastActivity = millis();
+  }
 #endif
 
   /* init WiFi mngt */
