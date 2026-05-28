@@ -76,6 +76,8 @@ public:
   void SaveTimeLapseFunctionStatus(bool);
   void SaveExternalTemperatureSensorEnable(bool);
   void SaveExternalTemperatureSensorUnit(uint8_t);
+  void SavePrusaLinkIp(String);
+  void SavePrusaLinkApiKey(String);
 
   uint8_t LoadRefreshInterval();
   String LoadToken();
@@ -120,6 +122,8 @@ public:
   bool LoadTimeLapseFunctionStatus();
   bool LoadExternalTemperatureSensorEnable();
   uint8_t LoadExternalTemperatureSensorUnit();
+  String LoadPrusaLinkIp();
+  String LoadPrusaLinkApiKey();
 
 private:
   Logs *Log;              ///< Pointer to Logs object

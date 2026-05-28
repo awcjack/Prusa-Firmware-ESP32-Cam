@@ -177,6 +177,8 @@ void Configuration::DefaultCfg() {
   SaveTimeLapseFunctionStatus(FACTORY_CFG_TIMELAPS_ENABLE);
   SaveExternalTemperatureSensorEnable(FACTORY_CFG_ENABLE_EXT_SENSOR);
   SaveExternalTemperatureSensorUnit(FACTORY_CFG_EXT_SENSOR_UNIT);
+  SavePrusaLinkIp(FACTORY_CFG_PRUSALINK_IP);
+  SavePrusaLinkApiKey(FACTORY_CFG_PRUSALINK_APIKEY);
   Log->AddEvent(LogLevel_Warning, F("+++++++++++++++++++++++++++"));
 }
 
@@ -879,8 +881,18 @@ void Configuration::SaveExternalTemperatureSensorEnable(bool i_data) {
    @return none
 */
 void Configuration::SaveExternalTemperatureSensorUnit(uint8_t i_data) {
-  Log->AddEvent(LogLevel_Verbose, F("Save external temperature sensor unit: "), String(i_data)); 
+  Log->AddEvent(LogLevel_Verbose, F("Save external temperature sensor unit: "), String(i_data));
   SaveUint8(EEPROM_ADDR_EXT_SENS_UNIT_START, i_data);
+}
+
+void Configuration::SavePrusaLinkIp(String i_data) {
+  Log->AddEvent(LogLevel_Verbose, F("Save Prusa Link IP: "), i_data);
+  SaveString(EEPROM_ADDR_PRUSALINK_IP_START, EEPROM_ADDR_PRUSALINK_IP_LENGTH, i_data);
+}
+
+void Configuration::SavePrusaLinkApiKey(String i_data) {
+  Log->AddEvent(LogLevel_Verbose, F("Save Prusa Link API key"));
+  SaveString(EEPROM_ADDR_PRUSALINK_APIKEY_START, EEPROM_ADDR_PRUSALINK_APIKEY_LENGTH, i_data);
 }
 
 /**
@@ -1424,7 +1436,18 @@ uint8_t Configuration::LoadExternalTemperatureSensorUnit() {
   }
 
   return ret;
+}
 
+String Configuration::LoadPrusaLinkIp() {
+  String ret = LoadString(EEPROM_ADDR_PRUSALINK_IP_START, EEPROM_ADDR_PRUSALINK_IP_LENGTH, false);
+  Log->AddEvent(LogLevel_Info, F("Prusa Link IP: "), ret);
+  return ret;
+}
+
+String Configuration::LoadPrusaLinkApiKey() {
+  String ret = LoadString(EEPROM_ADDR_PRUSALINK_APIKEY_START, EEPROM_ADDR_PRUSALINK_APIKEY_LENGTH, false);
+  Log->AddEvent(LogLevel_Info, F("Prusa Link API key loaded"));
+  return ret;
 }
 
 /* EOF */
