@@ -7,32 +7,60 @@
    Contact: miroslav.pivovarsky@gmail.com
 
    @bug: no know bug
+
+   Required Arduino libraries:
+   Install via Tools -> Manage Libraries unless marked [ZIP]:
+
+   Library              Version  How to install
+   -------------------  -------  --------------------------------------------------
+   ESPAsyncWebServer    3.4.5    [ZIP] github.com/mathieucarbou/ESPAsyncWebServer
+   AsyncTCP             3.3.1    [ZIP] github.com/mathieucarbou/AsyncTCP
+   ArduinoJson          7.3.0    Library Manager (author: Benoit Blanchon)
+   ArduinoUniqueID      1.3.0    Library Manager (author: Luiz H. Cassettari)
+   DHTnew               0.5.2    Library Manager (author: Rob Tillaart)
+
+   Board package (Boards Manager):
+   ESP32 by Espressif Systems  3.1.0
+   URL: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+
+   NOTE: ESPAsyncWebServer and AsyncTCP must be the mathieucarbou forks installed
+   as ZIP files. The original me-no-dev versions are not compatible with
+   arduino-esp32 3.x and will cause compile errors.
 */
 
 #ifndef _MCU_CFG_H_
 #define _MCU_CFG_H_
 
 /* ----------------- CAMERA TYPE  ---------------*/
-#define AI_THINKER_ESP32_CAM            true
+#define AI_THINKER_ESP32_CAM            false
 #define ESP32_WROVER_DEV                false
 #define CAMERA_MODEL_ESP32_S3_DEV_CAM   false
 #define CAMERA_MODEL_ESP32_S3_EYE_2_2   false
 #define CAMERA_MODEL_XIAO_ESP32_S3_CAM  false
 #define CAMERA_MODEL_ESP32_S3_CAM       false
 #define ESP32_S3_WROOM_FREENOVE         false
+#define M5_TIMER_CAM_X                  true    ///< M5Stack Timer Camera-X (OV3660)
 
 /* ---------------- BASIC MCU CFG  --------------*/
-#define SW_VERSION                  "1.1.2"                 ///< SW version
+#define SW_VERSION                  "1.2.0"                 ///< SW version
 #define SW_BUILD                    __DATE__ " " __TIME__   ///< build number
 #define CONSOLE_VERBOSE_DEBUG       false                   ///< enable/disable verbose debug log level for console
+#ifdef M5_TIMER_CAM_X
+#define DEVICE_HOSTNAME             "Prusa-TimerCamX"       ///< device hostname
+#else
 #define DEVICE_HOSTNAME             "Prusa-ESP32cam"        ///< device hostname
+#endif
 #define CAMERA_MAX_FAIL_CAPTURE     10                      ///< maximum count for failed capture
 
 /* ------------ PRUSA BACKEND CFG  --------------*/
 #define HOST_URL_CAM_PATH           "/c/snapshot"           ///< path for sending photo to prusa connect
 #define HOST_URL_INFO_PATH          "/c/info"               ///< path for sending info to prusa connect
 #define REFRESH_INTERVAL_MIN        10                      ///< minimum refresh interval for sending photo to prusa connect [s]
+#ifdef M5_TIMER_CAM_X
+#define REFRESH_INTERVAL_MAX        3600                    ///< M5 Timer Cam-X: up to 1 hour between shots to extend 140 mAh battery
+#else
 #define REFRESH_INTERVAL_MAX        240                     ///< maximum refresh interval for sending photo to prusa connect [s]
+#endif
 
 /* -------------- STATUS LED CFG ----------------*/
 #define STATUS_LED_ON_DURATION      100                     ///< time for blink status LED when is module in the ON state [ms]
@@ -99,8 +127,8 @@
 #define NTP_DAYLIGHT_OFFSET_SEC     0                       ///< daylight offset in seconds. 0 = no daylight saving time. 3600 = +1 hour
 
 /* ------------------ EXIF CFG ------------------*/
-#define CAMERA_MAKE                 "OmniVision"            ///< Camera make string
-#define CAMERA_MODEL                "OV2640"                ///< Camera model string
+#define CAMERA_MAKE                 "OmniVision"            ///< Camera make string (may be overridden by module header)
+#define CAMERA_MODEL                "OV2640"                ///< Camera model string (overridden to OV3660 for M5_TIMER_CAM_X)
 #define CAMERA_SOFTWARE             "Prusa ESP32-cam"       ///< Camera software string
 #define CAMERA_EXIF_ROTATION_STREAM false                   ///< enable camera exif rotation for stream
 
@@ -110,9 +138,17 @@
 #define TIMELAPS_PHOTO_SUFFIX       ".jpg"                  ///< photo file type for timelaps
 
 /* ---------------- FACTORY CFG  ----------------*/
+#ifdef M5_TIMER_CAM_X
+#define FACTORY_CFG_PHOTO_REFRESH_INTERVAL    300               ///< M5 Timer Cam-X default: 5 min (~3 days battery life)
+#else
 #define FACTORY_CFG_PHOTO_REFRESH_INTERVAL    30                ///< in the second
+#endif
 #define FACTORY_CFG_PHOTO_QUALITY             10                ///< 10-63, lower is better
+#ifdef M5_TIMER_CAM_X
+#define FACTORY_CFG_FRAME_SIZE                3                 ///< M5 Timer Cam-X default: SVGA (800x600) — suits OV3660 3MP with 8MB PSRAM
+#else
 #define FACTORY_CFG_FRAME_SIZE                0                 ///< 0 - FRAMESIZE_QVGA, ..., 6 - FRAMESIZE_UXGA. Look function Cfg_TransformFrameSizeDataType
+#endif
 #define FACTORY_CFG_BRIGHTNESS                0                 ///< from -2 to 2
 #define FACTORY_CFG_CONTRAST                  0                 ///< from -2 to 2
 #define FACTORY_CFG_SATURATION                0                 ///< from -2 to 2
@@ -131,7 +167,11 @@
 #define FACTORY_CFG_WEB_AUTH_ENABLE           false             ///< enable web auth for login to WEB interface. definition WEB_ENABLE_BASIC_AUTH must be 
 #define FACTORY_CFG_CAMERA_FLASH_ENABLE       false             ///< enable camera flash functionality
 #define FACTORY_CFG_CAMERA_FLASH_TIME         200               ///< time for camera flash duration time [ms]
-#define FACTORY_CFG_MDNS_RECORD_HOST          F("prusa-esp32cam") ///< mdns record http://MDNS_RECORD_HOST.local
+#ifdef M5_TIMER_CAM_X
+#define FACTORY_CFG_MDNS_RECORD_HOST          F("prusa-timercamx") ///< mdns record http://prusa-timercamx.local
+#else
+#define FACTORY_CFG_MDNS_RECORD_HOST          F("prusa-esp32cam")  ///< mdns record http://prusa-esp32cam.local
+#endif
 #define FACTORY_CFG_AEC2                      0                 ///< enable automatic exposition
 #define FACTORY_CFG_AE_LEVEL                  0                 ///< automatic exposition level
 #define FACTORY_CFG_AEC_VALUE                 300               ///< automatic exposition time
