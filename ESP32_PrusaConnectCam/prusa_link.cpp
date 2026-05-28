@@ -43,12 +43,12 @@ void PrusaLink::Init(String ip, String apiKey) {
 
 PrinterState PrusaLink::QueryPrinterState() {
   if (!IsConfigured()) {
-    return PrinterState::DISABLED;
+    return PrinterState::PS_DISABLED;
   }
 
   if (WiFi.status() != WL_CONNECTED) {
     log->AddEvent(LogLevel_Warning, F("Prusa Link: WiFi not connected, skipping query"));
-    return PrinterState::OFFLINE;
+    return PrinterState::PS_OFFLINE;
   }
 
   HTTPClient http;
@@ -61,7 +61,7 @@ PrinterState PrusaLink::QueryPrinterState() {
   if (code != 200) {
     log->AddEvent(LogLevel_Warning, "Prusa Link: HTTP " + String(code) + " from " + url);
     http.end();
-    return (code < 0) ? PrinterState::OFFLINE : PrinterState::UNKNOWN;
+    return (code < 0) ? PrinterState::PS_OFFLINE : PrinterState::PS_UNKNOWN;
   }
 
   String body = http.getString();
@@ -71,7 +71,7 @@ PrinterState PrusaLink::QueryPrinterState() {
   DeserializationError err = deserializeJson(doc, body);
   if (err) {
     log->AddEvent(LogLevel_Warning, "Prusa Link: JSON parse error: " + String(err.c_str()));
-    return PrinterState::UNKNOWN;
+    return PrinterState::PS_UNKNOWN;
   }
 
   bool operational = doc["state"]["flags"]["operational"] | false;
@@ -81,15 +81,15 @@ PrinterState PrusaLink::QueryPrinterState() {
 
   PrinterState state;
   if (!operational) {
-    state = PrinterState::OFFLINE;
+    state = PrinterState::PS_OFFLINE;
   } else if (error) {
-    state = PrinterState::ERROR;
+    state = PrinterState::PS_ERROR;
   } else if (printing) {
-    state = PrinterState::PRINTING;
+    state = PrinterState::PS_PRINTING;
   } else if (paused) {
-    state = PrinterState::PAUSED;
+    state = PrinterState::PS_PAUSED;
   } else {
-    state = PrinterState::OPERATIONAL;
+    state = PrinterState::PS_OPERATIONAL;
   }
 
   log->AddEvent(LogLevel_Info, "Prusa Link: printer state = " + StateToString(state));
@@ -98,12 +98,12 @@ PrinterState PrusaLink::QueryPrinterState() {
 
 String PrusaLink::StateToString(PrinterState state) {
   switch (state) {
-    case PrinterState::DISABLED:     return "disabled";
-    case PrinterState::OFFLINE:      return "offline";
-    case PrinterState::OPERATIONAL:  return "operational";
-    case PrinterState::PRINTING:     return "printing";
-    case PrinterState::PAUSED:       return "paused";
-    case PrinterState::ERROR:        return "error";
+    case PrinterState::PS_DISABLED:     return "disabled";
+    case PrinterState::PS_OFFLINE:      return "offline";
+    case PrinterState::PS_OPERATIONAL:  return "operational";
+    case PrinterState::PS_PRINTING:     return "printing";
+    case PrinterState::PS_PAUSED:       return "paused";
+    case PrinterState::PS_ERROR:        return "error";
     default:                         return "unknown";
   }
 }

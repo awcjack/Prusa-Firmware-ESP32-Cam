@@ -27,14 +27,16 @@
 #include "log.h"
 #include "mcu_cfg.h"
 
+/* Prefixed PS_ to avoid clashing with ESP32 HAL macros
+   (esp32-hal-gpio.h defines DISABLED 0x00, errno.h defines ERROR, etc.) */
 enum class PrinterState : uint8_t {
-  DISABLED,      ///< No printer IP configured — check skipped
-  OFFLINE,       ///< HTTP request failed (printer off or unreachable)
-  OPERATIONAL,   ///< Printer on, idle
-  PRINTING,      ///< Actively printing
-  PAUSED,        ///< Print paused
-  ERROR,         ///< Printer in error state
-  UNKNOWN,       ///< Connected but state unrecognised
+  PS_DISABLED,      ///< No printer IP configured — check skipped
+  PS_OFFLINE,       ///< HTTP request failed (printer off or unreachable)
+  PS_OPERATIONAL,   ///< Printer on, idle
+  PS_PRINTING,      ///< Actively printing
+  PS_PAUSED,        ///< Print paused
+  PS_ERROR,         ///< Printer in error state
+  PS_UNKNOWN,       ///< Connected but state unrecognised
 };
 
 class PrusaLink {

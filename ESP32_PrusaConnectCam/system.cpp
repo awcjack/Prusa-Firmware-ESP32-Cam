@@ -516,7 +516,7 @@ void System_TaskCaptureAndSendPhoto(void *pvParameters) {
 
       /* check Prusa Link printer state — skip capture if printer is offline */
       PrinterState printerState = SystemPrusaLink.QueryPrinterState();
-      bool printerReady = (printerState != PrinterState::OFFLINE) && (printerState != PrinterState::ERROR);
+      bool printerReady = (printerState != PrinterState::PS_OFFLINE) && (printerState != PrinterState::PS_ERROR);
 
       if (!printerReady) {
         SystemLog.AddEvent(LogLevel_Info,
@@ -549,11 +549,11 @@ void System_TaskCaptureAndSendPhoto(void *pvParameters) {
              the printer is not actively printing. */
           uint32_t sleepSec;
           switch (printerState) {
-            case PrinterState::OFFLINE:
-            case PrinterState::ERROR:
+            case PrinterState::PS_OFFLINE:
+            case PrinterState::PS_ERROR:
               sleepSec = REFRESH_INTERVAL_MAX;          /* max interval — printer off */
               break;
-            case PrinterState::OPERATIONAL:
+            case PrinterState::PS_OPERATIONAL:
               sleepSec = min(baseSec * 3u, (uint32_t)REFRESH_INTERVAL_MAX);  /* idle — 3× */
               break;
             default:
