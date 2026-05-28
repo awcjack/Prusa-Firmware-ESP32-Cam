@@ -28,4 +28,8 @@ TaskHandle_t Task_WiFiWatchdog;
 uint8_t StartRemoveSdCard = 0;
 uint32_t SdCardRemoveTime = 0;
 
+#ifdef M5_TIMER_CAM_X
+uint32_t WebClientLastActivity = 0;
+#endif
+
 /* EOF */

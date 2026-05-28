@@ -57,4 +57,8 @@ extern TaskHandle_t Task_WiFiWatchdog;               ///< task handle for wifi w
 extern uint8_t StartRemoveSdCard;
 extern uint32_t SdCardRemoveTime;
 
+#ifdef M5_TIMER_CAM_X
+extern uint32_t WebClientLastActivity;  ///< millis() of last web request; suppresses deep sleep
+#endif
+
 /* EOF */

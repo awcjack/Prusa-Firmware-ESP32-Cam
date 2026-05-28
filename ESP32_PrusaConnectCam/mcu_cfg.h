@@ -80,7 +80,10 @@
 #define TASK_SDCARD_FILE_REMOVE     30000                   ///< sd card file remove task interval [ms]
 
 /* --------------- WEB SERVER CFG  --------------*/
-#define WEB_SERVER_PORT             80                      ///< WEB server port 
+#define WEB_SERVER_PORT             80
+#ifdef M5_TIMER_CAM_X
+#define WEB_ACTIVITY_SLEEP_HOLDOFF  30000   ///< stay awake this many ms after last web request [ms]
+#endif                      ///< WEB server port 
 #define SERIAL_PORT_SPEED           115200                  ///< baud rate 
 #define WDG_TIMEOUT                 40000                   ///< wdg timeout [second]
 #define PHOTO_FRAGMENT_SIZE         2048                    ///< photo fragmentation size [bytes]

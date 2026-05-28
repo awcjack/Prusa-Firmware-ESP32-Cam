@@ -1286,6 +1286,10 @@ bool Server_CheckBasicAuth(AsyncWebServerRequest* request) {
     return false;
   }
 
+#ifdef M5_TIMER_CAM_X
+  WebClientLastActivity = millis();
+#endif
+
   return true;
 }
 

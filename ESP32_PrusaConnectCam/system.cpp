@@ -525,18 +525,25 @@ void System_TaskCaptureAndSendPhoto(void *pvParameters) {
            interval. The ESP32 timer wakeup re-runs setup() on the next cycle.
            Skip sleep when streaming is active or a firmware update is running. */
         if ((false == FirmwareUpdate.Processing) && (false == SystemCamera.GetStreamStatus())) {
-          uint32_t sleepSec = (uint32_t)SystemConfig.LoadRefreshInterval();
-          SystemBattery.Update();
-          SystemLog.AddEvent(LogLevel_Info,
-            "Battery: " + String(SystemBattery.GetVoltageMv()) + " mV (" +
-            String(SystemBattery.GetPercent()) + "%)");
-          SystemLog.AddEvent(LogLevel_Info,
-            "Entering deep sleep for " + String(sleepSec) + " s");
-          esp_task_wdt_reset();
-          delay(50);  /* flush serial */
-          esp_sleep_enable_timer_wakeup((uint64_t)sleepSec * 1000000ULL);
-          esp_deep_sleep_start();
-          /* execution never reaches here */
+          /* Suppress sleep while a browser is actively using the web UI */
+          uint32_t msSinceWeb = millis() - WebClientLastActivity;
+          if (WebClientLastActivity > 0 && msSinceWeb < WEB_ACTIVITY_SLEEP_HOLDOFF) {
+            SystemLog.AddEvent(LogLevel_Info,
+              "Deep sleep skipped: web client active " + String(msSinceWeb / 1000) + "s ago");
+          } else {
+            uint32_t sleepSec = (uint32_t)SystemConfig.LoadRefreshInterval();
+            SystemBattery.Update();
+            SystemLog.AddEvent(LogLevel_Info,
+              "Battery: " + String(SystemBattery.GetVoltageMv()) + " mV (" +
+              String(SystemBattery.GetPercent()) + "%)");
+            SystemLog.AddEvent(LogLevel_Info,
+              "Entering deep sleep for " + String(sleepSec) + " s");
+            esp_task_wdt_reset();
+            delay(50);  /* flush serial */
+            esp_sleep_enable_timer_wakeup((uint64_t)sleepSec * 1000000ULL);
+            esp_deep_sleep_start();
+            /* execution never reaches here */
+          }
         }
 #endif
       }
