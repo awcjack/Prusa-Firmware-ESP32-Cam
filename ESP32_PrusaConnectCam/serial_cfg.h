@@ -20,6 +20,7 @@
 #include "cfg.h"
 #include "connect.h"
 #include "camera.h"
+#include "prusa_link.h"
 
 class WiFiMngt;
 class PrusaConnect;

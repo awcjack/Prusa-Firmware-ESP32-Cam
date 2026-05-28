@@ -97,6 +97,23 @@ String lastTwoChars = command.substring(command.length() - 2);
     WebBasicAuth.EnableAuth = enable;
     log->AddEvent(LogLevel_Info, F("--> Console set web auth enable: "), String(enable));
 
+  } else if (command.startsWith("setprusaip:") && command.endsWith(";")) {
+    String ip = command.substring(11, command.length() - 1);
+    config->SavePrusaLinkIp(ip);
+    SystemPrusaLink.SetIp(ip);
+    log->AddEvent(LogLevel_Info, F("--> Console set Prusa Link IP: "), ip);
+
+  } else if (command.startsWith("setprusaapikey:") && command.endsWith(";")) {
+    String key = command.substring(15, command.length() - 1);
+    config->SavePrusaLinkApiKey(key);
+    SystemPrusaLink.SetApiKey(key);
+    log->AddEvent(LogLevel_Info, F("--> Console set Prusa Link API key"));
+
+  } else if (command.startsWith("getprusastatus") && command.endsWith(";")) {
+    PrinterState state = SystemPrusaLink.QueryPrinterState();
+    Serial.println("prusastatus:" + SystemPrusaLink.StateToString(state) + ";");
+    log->AddEvent(LogLevel_Info, F("--> Console get Prusa Link status"));
+
   } else if (command.startsWith("wificonnect") && command.endsWith(";")) {
     log->AddEvent(LogLevel_Info, F("--> Console connecting to wifi..."));
     wifim->ConnectToSta();
@@ -184,6 +201,9 @@ void SerialCfg::PrintAvailableCommands() {
   Serial.println(F("setwifipass:PASS;       - set WiFi password"));
   Serial.println(F("setauthtoken:TOKEN;     - set auth TOKEN for backend"));
   Serial.println(F("setwebauthenable:true;  - enable web UI basic auth"));
+  Serial.println(F("setprusaip:IP;          - set Prusa Link printer IP"));
+  Serial.println(F("setprusaapikey:KEY;     - set Prusa Link X-Api-Key"));
+  Serial.println(F("getprusastatus;         - query printer state via Prusa Link"));
   Serial.println(F("wificonnect;            - connect to WiFi network"));
   Serial.println(F("getwifimode;            - get WiFi mode (AP/STA)"));
   Serial.println(F("getwifistastatus;       - get STA status (connected/disconnected)"));

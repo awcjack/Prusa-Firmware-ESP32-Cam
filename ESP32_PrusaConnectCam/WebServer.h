@@ -32,6 +32,7 @@
 #include "wifi_mngt.h"
 #include "WebStream.h"
 #include "ExternalTemperatureSensor.h"
+#include "prusa_link.h"
 
 #ifdef M5_TIMER_CAM_X
 #include "battery.h"

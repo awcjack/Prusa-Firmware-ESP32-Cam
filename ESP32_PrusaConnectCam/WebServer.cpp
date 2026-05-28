@@ -840,6 +840,39 @@ void Server_InitWebServer_Sets() {
     }
   });
 
+  /* route for set Prusa Link printer IP and API key
+     /set_prusalink?ip=192.168.1.100&apikey=abc123 */
+  server.on("/set_prusalink", HTTP_GET, [](AsyncWebServerRequest* request) {
+    SystemLog.AddEvent(LogLevel_Verbose, F("WEB server: /set_prusalink"));
+    if (Server_CheckBasicAuth(request) == false)
+      return;
+
+    if (request->hasParam("ip")) {
+      String ip = request->getParam("ip")->value();
+      SystemConfig.SavePrusaLinkIp(ip);
+      SystemPrusaLink.SetIp(ip);
+    }
+    if (request->hasParam("apikey")) {
+      String key = request->getParam("apikey")->value();
+      SystemConfig.SavePrusaLinkApiKey(key);
+      SystemPrusaLink.SetApiKey(key);
+    }
+    request->send(200, F("text/plain"), "OK");
+  });
+
+  /* route for query current Prusa Link printer state */
+  server.on("/prusalink_status", HTTP_GET, [](AsyncWebServerRequest* request) {
+    SystemLog.AddEvent(LogLevel_Verbose, F("WEB server: /prusalink_status"));
+    if (Server_CheckBasicAuth(request) == false)
+      return;
+
+    PrinterState state = SystemPrusaLink.QueryPrinterState();
+    String json = "{\"state\":\"" + SystemPrusaLink.StateToString(state) + "\""
+                  ",\"ip\":\""     + SystemPrusaLink.GetIp()             + "\""
+                  ",\"configured\":" + (SystemPrusaLink.IsConfigured() ? "true" : "false") + "}";
+    request->send(200, F("application/json"), json);
+  });
+
   /* route for set prusa connect hostname /set_hostname?hostname=*/
   server.on("/set_hostname", HTTP_GET, [](AsyncWebServerRequest* request) {
     SystemLog.AddEvent(LogLevel_Verbose, F("WEB server: /set_hostname"));
