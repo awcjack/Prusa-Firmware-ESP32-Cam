@@ -519,13 +519,33 @@ void System_TaskCaptureAndSendPhoto(void *pvParameters) {
         SystemLog.AddEvent(LogLevel_Verbose, F("Task photo processing. Start sending photo"));
         esp_task_wdt_reset();
         Connect.TakePictureAndSendToBackend();
+
+#ifdef M5_TIMER_CAM_X
+        /* After a successful upload, enter deep sleep for the configured refresh
+           interval. The ESP32 timer wakeup re-runs setup() on the next cycle.
+           Skip sleep when streaming is active or a firmware update is running. */
+        if ((false == FirmwareUpdate.Processing) && (false == SystemCamera.GetStreamStatus())) {
+          uint32_t sleepSec = (uint32_t)SystemConfig.LoadRefreshInterval();
+          SystemBattery.Update();
+          SystemLog.AddEvent(LogLevel_Info,
+            "Battery: " + String(SystemBattery.GetVoltageMv()) + " mV (" +
+            String(SystemBattery.GetPercent()) + "%)");
+          SystemLog.AddEvent(LogLevel_Info,
+            "Entering deep sleep for " + String(sleepSec) + " s");
+          esp_task_wdt_reset();
+          delay(50);  /* flush serial */
+          esp_sleep_enable_timer_wakeup((uint64_t)sleepSec * 1000000ULL);
+          esp_deep_sleep_start();
+          /* execution never reaches here */
+        }
+#endif
       }
 
     } else {
       /* update counter */
       Connect.IncreaseSendingIntervalCounter();
     }
-    
+
     SystemLog.AddEvent(LogLevel_Verbose, F("Photo processing task. Stack free size: "), String(uxTaskGetStackHighWaterMark(NULL)) + "B");
 
     /* reset wdg */

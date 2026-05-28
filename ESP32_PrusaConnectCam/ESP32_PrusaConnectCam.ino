@@ -46,7 +46,19 @@
 #include "wifi_mngt.h"
 #include "serial_cfg.h"
 
+#ifdef M5_TIMER_CAM_X
+#include "battery.h"
+#include "rtc_bm8563.h"
+#include <esp_sleep.h>
+#endif
+
 void setup() {
+#ifdef M5_TIMER_CAM_X
+  /* Hold power on immediately — GPIO 33 must be HIGH or the device shuts down */
+  pinMode(BAT_HOLD_PIN, OUTPUT);
+  digitalWrite(BAT_HOLD_PIN, HIGH);
+#endif
+
   /* Serial port for debugging purposes */
   Serial.begin(SERIAL_PORT_SPEED);
   Serial.println(F("----------------------------------------------------------------"));
@@ -58,6 +70,15 @@ void setup() {
   Serial.println(SW_BUILD);
 #if (CONSOLE_VERBOSE_DEBUG == true)
   Serial.setDebugOutput(true);
+#endif
+
+#ifdef M5_TIMER_CAM_X
+  esp_sleep_wakeup_cause_t wakeupCause = esp_sleep_get_wakeup_cause();
+  if (wakeupCause == ESP_SLEEP_WAKEUP_TIMER) {
+    Serial.println(F("Woke from deep sleep (timer)"));
+  } else {
+    Serial.println(F("Cold boot or manual reset"));
+  }
 #endif
 
   /* Init EEPROM */
@@ -81,6 +102,34 @@ void setup() {
   SystemCamera.LoadCameraCfgFromEeprom();
   Connect.LoadCfgFromEeprom();
   SystemWifiMngt.LoadCfgFromEeprom();
+
+#ifdef M5_TIMER_CAM_X
+  /* Init battery monitor and RTC before WiFi so:
+     - RTC time can prime the system clock on deep-sleep wakeup (EXIF timestamps while
+       NTP is still connecting), and
+     - SyncNtpTime() can write the verified NTP time back to the RTC. */
+  SystemBattery.Init();
+  SystemRtc.Init();
+
+  /* On deep-sleep wakeup, prime the system clock from the BM8563 so photo timestamps
+     are correct even before NTP completes. */
+  if (wakeupCause == ESP_SLEEP_WAKEUP_TIMER && SystemRtc.IsRunning()) {
+    RtcTime rtcNow;
+    if (SystemRtc.GetTime(rtcNow)) {
+      struct tm tmRtc = {};
+      tmRtc.tm_sec  = rtcNow.seconds;
+      tmRtc.tm_min  = rtcNow.minutes;
+      tmRtc.tm_hour = rtcNow.hours;
+      tmRtc.tm_mday = rtcNow.day;
+      tmRtc.tm_mon  = rtcNow.month - 1;
+      tmRtc.tm_year = rtcNow.year - 1900;
+      time_t t = mktime(&tmRtc);
+      struct timeval tv = { t, 0 };
+      settimeofday(&tv, nullptr);
+      SystemLog.AddEvent(LogLevel_Info, F("System clock primed from RTC"));
+    }
+  }
+#endif
 
   /* init WiFi mngt */
   SystemWifiMngt.Init();
