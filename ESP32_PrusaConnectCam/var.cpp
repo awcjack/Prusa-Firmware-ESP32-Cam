@@ -30,6 +30,7 @@ uint32_t SdCardRemoveTime = 0;
 
 #ifdef M5_TIMER_CAM_X
 uint32_t WebClientLastActivity = 0;
+RTC_DATA_ATTR bool StayAwakeAfterSleep = false;  /* persists across deep sleep */
 #endif
 
 /* EOF */

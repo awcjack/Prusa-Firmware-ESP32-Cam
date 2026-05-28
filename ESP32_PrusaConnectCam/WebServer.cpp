@@ -1288,6 +1288,7 @@ bool Server_CheckBasicAuth(AsyncWebServerRequest* request) {
 
 #ifdef M5_TIMER_CAM_X
   WebClientLastActivity = millis();
+  StayAwakeAfterSleep = true;  /* persists through deep sleep so next wakeup gives a connection window */
 #endif
 
   return true;

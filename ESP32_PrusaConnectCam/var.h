@@ -59,6 +59,7 @@ extern uint32_t SdCardRemoveTime;
 
 #ifdef M5_TIMER_CAM_X
 extern uint32_t WebClientLastActivity;  ///< millis() of last web request; suppresses deep sleep
+extern bool StayAwakeAfterSleep;        ///< RTC_DATA_ATTR: survives deep sleep; grants next wakeup an AP window
 #endif
 
 /* EOF */
