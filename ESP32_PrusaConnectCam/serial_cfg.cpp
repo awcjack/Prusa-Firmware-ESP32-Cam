@@ -90,6 +90,13 @@ String lastTwoChars = command.substring(command.length() - 2);
     log->AddEvent(LogLevel_Info, F("--> Console set auth TOKEN for backend: "), auth_token);
     connect->SetToken(auth_token);
 
+  } else if (command.startsWith("setwebauthenable:") && command.endsWith(";")) {
+    String val = command.substring(17, command.length() - 1);
+    bool enable = (val == "true");
+    config->SaveBasicAuthFlag(enable);
+    WebBasicAuth.EnableAuth = enable;
+    log->AddEvent(LogLevel_Info, F("--> Console set web auth enable: "), String(enable));
+
   } else if (command.startsWith("wificonnect") && command.endsWith(";")) {
     log->AddEvent(LogLevel_Info, F("--> Console connecting to wifi..."));
     wifim->ConnectToSta();
@@ -176,6 +183,7 @@ void SerialCfg::PrintAvailableCommands() {
   Serial.println(F("setwifissid:SSID;       - set WiFi SSID"));
   Serial.println(F("setwifipass:PASS;       - set WiFi password"));
   Serial.println(F("setauthtoken:TOKEN;     - set auth TOKEN for backend"));
+  Serial.println(F("setwebauthenable:true;  - enable web UI basic auth"));
   Serial.println(F("wificonnect;            - connect to WiFi network"));
   Serial.println(F("getwifimode;            - get WiFi mode (AP/STA)"));
   Serial.println(F("getwifistastatus;       - get STA status (connected/disconnected)"));
