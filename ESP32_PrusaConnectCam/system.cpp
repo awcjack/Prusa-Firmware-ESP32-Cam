@@ -514,8 +514,16 @@ void System_TaskCaptureAndSendPhoto(void *pvParameters) {
         Connect.SendInfoToBackend();
       }
 
+      /* check Prusa Link printer state — skip capture if printer is offline */
+      PrinterState printerState = SystemPrusaLink.QueryPrinterState();
+      if (printerState == PrinterState::OFFLINE || printerState == PrinterState::ERROR) {
+        SystemLog.AddEvent(LogLevel_Info,
+          "Skipping capture: printer " + SystemPrusaLink.StateToString(printerState));
+      }
+
       /* send photo to backend*/
-      if ((WL_CONNECTED == WiFi.status()) && (false == FirmwareUpdate.Processing)) {
+      if ((WL_CONNECTED == WiFi.status()) && (false == FirmwareUpdate.Processing)
+          && (printerState != PrinterState::OFFLINE) && (printerState != PrinterState::ERROR)) {
         SystemLog.AddEvent(LogLevel_Verbose, F("Task photo processing. Start sending photo"));
         esp_task_wdt_reset();
         Connect.TakePictureAndSendToBackend();

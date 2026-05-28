@@ -46,6 +46,8 @@
 #include "rtc_bm8563.h"
 #endif
 
+#include "prusa_link.h"
+
 #define SYSTEM_MSG_UPDATE_DONE    F("FW update successfully done! Please reboot the MCU.")
 #define SYSTEM_MSG_UPDATE_FAIL    F("FW update failed! Please reboot MCU, and try again.")
 #define SYSTEM_MSG_UPDATE_PROCESS F("FW update in progress")

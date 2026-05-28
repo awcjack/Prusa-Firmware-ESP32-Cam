@@ -153,6 +153,9 @@ void setup() {
   /* init class for communication with PrusaConnect */
   Connect.Init();
 
+  /* init Prusa Link printer state check (optional — skipped if IP not configured) */
+  SystemPrusaLink.Init(SystemConfig.LoadPrusaLinkIp(), SystemConfig.LoadPrusaLinkApiKey());
+
   /* init external temperature sensor */
   ExternalTemperatureSensor.Init();
 
