@@ -32,7 +32,7 @@ class Camera;
 
 class PrusaConnect {
 private:
-  uint8_t RefreshInterval;                        ///< interval for sending photo to backend
+  uint16_t RefreshInterval;                       ///< interval for sending photo to backend [s]
   String BackendReceivedStatus;                   ///< status of backend response
   BackendAvailabilitStatus BackendAvailability;   ///< status of backend availability
   bool SendDeviceInformationToBackend;            ///< flag for sending device information to backend
@@ -65,7 +65,7 @@ public:
   bool ProcessHttpResponseCodeBool(int);
   void UpdateDeviceInformation();
 
-  void SetRefreshInterval(uint8_t);
+  void SetRefreshInterval(uint16_t);
   void SetToken(String);
   void SetBackendAvailabilitStatus(BackendAvailabilitStatus);
   void SetPrusaConnectHostname(String);
@@ -73,7 +73,7 @@ public:
 
   void SavePhotoToSdCard();
 
-  uint8_t GetRefreshInterval();
+  uint16_t GetRefreshInterval();
   String GetBackendReceivedStatus();
   String GetToken();
   String GetFingerprint();

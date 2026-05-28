@@ -447,9 +447,9 @@ String Configuration::LoadIpAddress(uint16_t address) {
    @param uint8_t - refresh interval
    @return none
 */
-void Configuration::SaveRefreshInterval(uint8_t i_interval) {
+void Configuration::SaveRefreshInterval(uint16_t i_interval) {
   Log->AddEvent(LogLevel_Verbose, F("Save RefreshInterval: "), String(i_interval));
-  SaveUint8(EEPROM_ADDR_REFRESH_INTERVAL_START, i_interval);
+  SaveUint16(EEPROM_ADDR_REFRESH_INTERVAL_START, i_interval);
 }
 
 /**
@@ -900,10 +900,12 @@ void Configuration::SavePrusaLinkApiKey(String i_data) {
    @param none
    @return uint8_t - refresh interval
 */
-uint8_t Configuration::LoadRefreshInterval() {
-  uint8_t ret = EEPROM.read(EEPROM_ADDR_REFRESH_INTERVAL_START);
+uint16_t Configuration::LoadRefreshInterval() {
+  uint16_t ret = LoadUint16(EEPROM_ADDR_REFRESH_INTERVAL_START);
+  if (ret == 0xFFFF || ret == 0) {
+    ret = FACTORY_CFG_PHOTO_REFRESH_INTERVAL;
+  }
   Log->AddEvent(LogLevel_Info, F("Refresh interval: "), String(ret));
-
   return ret;
 }
 

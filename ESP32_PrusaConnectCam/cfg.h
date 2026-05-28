@@ -32,7 +32,7 @@ public:
   bool CheckActifeWifiCfgFlag();
   void CheckResetCfg();
 
-  void SaveRefreshInterval(uint8_t);
+  void SaveRefreshInterval(uint16_t);
   void SaveToken(String);
   void SaveFingerprint(String);
   void SavePhotoQuality(uint8_t);
@@ -79,7 +79,7 @@ public:
   void SavePrusaLinkIp(String);
   void SavePrusaLinkApiKey(String);
 
-  uint8_t LoadRefreshInterval();
+  uint16_t LoadRefreshInterval();
   String LoadToken();
   String LoadFingerprint();
   uint8_t LoadPhotoQuality();

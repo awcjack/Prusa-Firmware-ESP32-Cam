@@ -433,7 +433,7 @@ void PrusaConnect::UpdateDeviceInformation() {
  * @param uint8_t i_data - refresh interval
  * @return none
  */
-void PrusaConnect::SetRefreshInterval(uint8_t i_data) {
+void PrusaConnect::SetRefreshInterval(uint16_t i_data) {
   RefreshInterval = i_data;
   config->SaveRefreshInterval(RefreshInterval);
 }
@@ -533,7 +533,7 @@ void PrusaConnect::SavePhotoToSdCard() {
  * @param none
  * @return uint8_t - refresh interval
  */
-uint8_t PrusaConnect::GetRefreshInterval() {
+uint16_t PrusaConnect::GetRefreshInterval() {
   return RefreshInterval;
 }
 

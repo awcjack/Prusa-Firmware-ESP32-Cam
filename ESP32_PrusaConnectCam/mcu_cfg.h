@@ -200,8 +200,8 @@
 #define SECOND_TO_MILISECOND                  1000              ///< constant for convert ms to second
 
 /* ---------------- EEPROM CFG ------------------*/
-#define EEPROM_ADDR_REFRESH_INTERVAL_START        0   ///< whre is stored first byte from refresh data
-#define EEPROM_ADDR_REFRESH_INTERVAL_LENGTH       1   ///< how long is the refresh data variable stored in the eeprom [bytes]
+#define EEPROM_ADDR_REFRESH_INTERVAL_START        0   ///< where is stored first byte from refresh data
+#define EEPROM_ADDR_REFRESH_INTERVAL_LENGTH       2   ///< uint16_t: supports values up to 3600 s (M5 max)
 
 #define EEPROM_ADDR_FINGERPRINT_START             (EEPROM_ADDR_REFRESH_INTERVAL_START + EEPROM_ADDR_REFRESH_INTERVAL_LENGTH)    ///< where is stored first byte from refresh interval
 #define EEPROM_ADDR_FINGERPRINT_LENGTH            80                                                                            ///< how long is refresh interval [bytes]

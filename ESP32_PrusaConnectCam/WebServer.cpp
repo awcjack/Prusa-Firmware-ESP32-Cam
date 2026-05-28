@@ -565,7 +565,7 @@ void Server_InitWebServer_Sets() {
     /* set refresh interval */
     if (request->hasParam("refresh")) {
       SystemLog.AddEvent(LogLevel_Verbose, F("Set refresh interval"));
-      uint8_t value = request->getParam("refresh")->value().toInt();
+      uint16_t value = (uint16_t)request->getParam("refresh")->value().toInt();
       if ((value >= REFRESH_INTERVAL_MIN) && (value <= REFRESH_INTERVAL_MAX)) {
         Connect.SetRefreshInterval(value);
         response_msg = MSG_SAVE_OK;
@@ -1301,6 +1301,8 @@ String Server_GetJsonData() {
   doc_json["bat_percent"] = SystemBattery.GetPercent();
   doc_json["bat_low"]     = SystemBattery.IsLow();
 #endif
+  doc_json["prusalink_ip"]         = SystemPrusaLink.GetIp();
+  doc_json["prusalink_configured"] = SystemPrusaLink.IsConfigured();
 
   serializeJson(doc_json, string_json);
   SystemLog.AddEvent(LogLevel_Verbose, string_json);
