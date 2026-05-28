@@ -525,9 +525,21 @@ void System_TaskCaptureAndSendPhoto(void *pvParameters) {
            interval. The ESP32 timer wakeup re-runs setup() on the next cycle.
            Skip sleep when streaming is active or a firmware update is running. */
         if ((false == FirmwareUpdate.Processing) && (false == SystemCamera.GetStreamStatus())) {
-          /* Suppress sleep while a browser is actively using the web UI */
+          bool fromDeepSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER);
+
+          /* On cold boot stay awake for the full AP config window so the user
+             can reach the web UI before the first sleep occurs. */
+          bool coldBootHoldoff = (!fromDeepSleep) && (millis() < STA_AP_MODE_TIMEOUT);
+
+          /* Suppress sleep while a browser is actively using the web UI. */
           uint32_t msSinceWeb = millis() - WebClientLastActivity;
-          if (WebClientLastActivity > 0 && msSinceWeb < WEB_ACTIVITY_SLEEP_HOLDOFF) {
+          bool webActive = (WebClientLastActivity > 0) && (msSinceWeb < WEB_ACTIVITY_SLEEP_HOLDOFF);
+
+          if (coldBootHoldoff) {
+            SystemLog.AddEvent(LogLevel_Info,
+              "Deep sleep skipped: cold boot AP window (" + String(millis() / 1000) + "s / " +
+              String(STA_AP_MODE_TIMEOUT / 1000) + "s)");
+          } else if (webActive) {
             SystemLog.AddEvent(LogLevel_Info,
               "Deep sleep skipped: web client active " + String(msSinceWeb / 1000) + "s ago");
           } else {
