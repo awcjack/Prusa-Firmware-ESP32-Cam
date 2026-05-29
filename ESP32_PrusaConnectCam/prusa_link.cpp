@@ -56,10 +56,12 @@ PrinterState PrusaLink::QueryPrinterState() {
   http.begin(url);
   http.addHeader("X-Api-Key", ApiKey);
   http.setTimeout(PRUSA_LINK_TIMEOUT_MS);
+  log->AddEvent(LogLevel_Info, "Prusa Link: GET " + url + " X-Api-Key: " + ApiKey.substring(0, 3) + "***");
 
   int code = http.GET();
   if (code != 200) {
-    log->AddEvent(LogLevel_Warning, "Prusa Link: HTTP " + String(code) + " from " + url);
+    String errBody = http.getString();
+    log->AddEvent(LogLevel_Warning, "Prusa Link: HTTP " + String(code) + " body: " + errBody);
     http.end();
     return (code < 0) ? PrinterState::PS_OFFLINE : PrinterState::PS_UNKNOWN;
   }
