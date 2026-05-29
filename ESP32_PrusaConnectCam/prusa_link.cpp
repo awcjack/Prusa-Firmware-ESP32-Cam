@@ -25,7 +25,7 @@
 #include "prusa_link.h"
 
 #define PRUSA_LINK_TIMEOUT_MS  5000   ///< HTTP connect+read timeout [ms]
-#define PRUSA_LINK_API_PATH    "/api/printer"
+#define PRUSA_LINK_API_PATH    "/api/v1/status"
 
 PrusaLink SystemPrusaLink(&SystemLog);
 
@@ -74,22 +74,31 @@ PrinterState PrusaLink::QueryPrinterState() {
     return PrinterState::PS_UNKNOWN;
   }
 
-  bool operational = doc["state"]["flags"]["operational"] | false;
-  bool printing    = doc["state"]["flags"]["printing"]    | false;
-  bool paused      = doc["state"]["flags"]["paused"]      | false;
-  bool error       = doc["state"]["flags"]["error"]       | false;
+  /* Modern Prusa Link /api/v1/status response:
+     { "printer": { "state": "PRINTING" | "IDLE" | "READY" | "PAUSED" |
+                              "STOPPED" | "ATTENTION" | "BUSY" | "ERROR" | "FINISHED" },
+       "job": { ... } }
+  */
+  if (!doc.containsKey("printer")) {
+    log->AddEvent(LogLevel_Warning, F("Prusa Link: missing 'printer' key in response"));
+    return PrinterState::PS_UNKNOWN;
+  }
+
+  String stateStr = doc["printer"]["state"] | "";
+  stateStr.toUpperCase();
 
   PrinterState state;
-  if (!operational) {
-    state = PrinterState::PS_OFFLINE;
-  } else if (error) {
-    state = PrinterState::PS_ERROR;
-  } else if (printing) {
+  if (stateStr == "PRINTING" || stateStr == "BUSY") {
     state = PrinterState::PS_PRINTING;
-  } else if (paused) {
+  } else if (stateStr == "PAUSED") {
     state = PrinterState::PS_PAUSED;
-  } else {
+  } else if (stateStr == "IDLE" || stateStr == "READY" || stateStr == "FINISHED" || stateStr == "STOPPED") {
     state = PrinterState::PS_OPERATIONAL;
+  } else if (stateStr == "ERROR" || stateStr == "ATTENTION") {
+    state = PrinterState::PS_ERROR;
+  } else {
+    log->AddEvent(LogLevel_Warning, "Prusa Link: unrecognised state: " + stateStr);
+    state = PrinterState::PS_UNKNOWN;
   }
 
   log->AddEvent(LogLevel_Info, "Prusa Link: printer state = " + StateToString(state));
