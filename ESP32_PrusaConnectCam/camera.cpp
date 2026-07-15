@@ -423,6 +423,18 @@ void Camera::CapturePhoto() {
       if (!FrameBuffer) {
         CameraCaptureFailedCounter++;
         log->AddEvent(LogLevel_Error, F("Camera capture failed! photo. Attempt: "), String(CameraCaptureFailedCounter));
+        /* Recover a wedged sensor: after repeated NULL frames the module must be
+           reinitialised here, because this early return never reaches the check below. */
+        if (CameraCaptureFailedCounter > CAMERA_MAX_FAIL_CAPTURE) {
+          log->AddEvent(LogLevel_Error, F("Camera capture failed! photo max attempts. Reinit camera module"));
+          CameraCaptureFailedCounter = 0;
+          if (true == CameraFlashEnable) {
+            SetFlashStatus(false);
+          }
+          xSemaphoreGive(frameBufferSemaphore);  // Release semaphore before reinit
+          ReinitCameraModule();
+          return;
+        }
         xSemaphoreGive(frameBufferSemaphore);  // Release semaphore before returning
         return;
       }
