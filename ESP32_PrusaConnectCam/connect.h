@@ -36,7 +36,7 @@ private:
   String BackendReceivedStatus;                   ///< status of backend response
   BackendAvailabilitStatus BackendAvailability;   ///< status of backend availability
   bool SendDeviceInformationToBackend;            ///< flag for sending device information to backend
-  uint8_t SendingIntervalCounter;                 ///< counter for sending interval, represents seconds
+  uint16_t SendingIntervalCounter;                ///< counter for sending interval, represents seconds (must match RefreshInterval width)
   bool EnableTimelapsPhotoSave;                   ///< flag for saving photo to SD card
 
   String Token;                                   ///< token for backend communication
@@ -83,9 +83,9 @@ public:
   bool GetTimeLapsPhotoSaveStatus();
 
   void IncreaseSendingIntervalCounter();
-  void SetSendingIntervalCounter(uint8_t);
+  void SetSendingIntervalCounter(uint16_t);
   void SetSendingIntervalExpired();
-  uint8_t GetSendingIntervalCounter();
+  uint16_t GetSendingIntervalCounter();
   bool CheckSendingIntervalExpired();
 };
 

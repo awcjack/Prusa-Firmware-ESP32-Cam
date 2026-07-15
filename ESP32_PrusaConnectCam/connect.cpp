@@ -628,10 +628,10 @@ void PrusaConnect::IncreaseSendingIntervalCounter() {
 /**
  * @brief Set sending interval counter
  *
- * @param uint8_t i_data - counter
+ * @param uint16_t i_data - counter
  * @return none
  */
-void PrusaConnect::SetSendingIntervalCounter(uint8_t i_data) {
+void PrusaConnect::SetSendingIntervalCounter(uint16_t i_data) {
   SendingIntervalCounter = i_data;
 }
 
@@ -642,9 +642,9 @@ void PrusaConnect::SetSendingIntervalExpired() {
 /**
  * @brief Get sending interval counter
  * 
- * @return uint8_t - counter
+ * @return uint16_t - counter
  */
-uint8_t PrusaConnect::GetSendingIntervalCounter() {
+uint16_t PrusaConnect::GetSendingIntervalCounter() {
   return SendingIntervalCounter;
 }
 
