@@ -548,17 +548,25 @@ void System_TaskCaptureAndSendPhoto(void *pvParameters) {
           /* Scale sleep duration by printer state to save battery when
              the printer is not actively printing. */
           uint32_t sleepSec;
-          switch (printerState) {
-            case PrinterState::PS_OFFLINE:
-            case PrinterState::PS_ERROR:
-              sleepSec = REFRESH_INTERVAL_MAX;          /* max interval — printer off */
-              break;
-            case PrinterState::PS_OPERATIONAL:
-              sleepSec = min(baseSec * 3u, (uint32_t)REFRESH_INTERVAL_MAX);  /* idle — 3× */
-              break;
-            default:
-              sleepSec = baseSec;
-              break;
+          if (WL_CONNECTED != WiFi.status()) {
+            /* WiFi failed to associate on this wake, so the printer state is unknown
+               (QueryPrinterState() reports PS_OFFLINE for a WiFi drop, not a real
+               offline printer). Retry soon at the base interval instead of blacking
+               out for REFRESH_INTERVAL_MAX while a print may be in progress. */
+            sleepSec = baseSec;
+          } else {
+            switch (printerState) {
+              case PrinterState::PS_OFFLINE:
+              case PrinterState::PS_ERROR:
+                sleepSec = REFRESH_INTERVAL_MAX;          /* max interval — printer off */
+                break;
+              case PrinterState::PS_OPERATIONAL:
+                sleepSec = min(baseSec * 3u, (uint32_t)REFRESH_INTERVAL_MAX);  /* idle — 3× */
+                break;
+              default:
+                sleepSec = baseSec;
+                break;
+            }
           }
 
           SystemBattery.Update();
